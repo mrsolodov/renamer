@@ -1,0 +1,19 @@
+[package]
+name = "renamer"
+version = "0.1.0"
+edition = "2021"
+default-run = "renamer"
+description = "Cross-platform CLI core for anonymizing app names, package identifiers, keywords, and icons."
+license = "MIT"
+
+[lib]
+name = "renamer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "renamer"
+path = "src/main.rs"
+
+[[bin]]
+name = "renamer-desktop"
+path = "src/bin/desktop.rs"
