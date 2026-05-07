@@ -416,6 +416,17 @@ fn rename_path_if_needed(
     } else {
         path.with_file_name(renamed)
     };
+    if !config.dry_run && destination.try_exists()? {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!(
+                "cannot rename {} to {} because the destination already exists",
+                path.display(),
+                destination.display()
+            ),
+        ));
+    }
+
     summary
         .renamed_paths
         .push((path.to_path_buf(), destination.clone()));
@@ -576,6 +587,28 @@ mod tests {
             fs::read_to_string(new_activity).unwrap(),
             "package io.neutral.app\nclass MainActivity"
         );
+    }
+
+    #[test]
+    fn apply_fails_when_renamed_file_target_already_exists() {
+        let temp = temp_dir("path-collision");
+        fs::create_dir_all(&temp).unwrap();
+        let source = temp.join("OldBrand.txt");
+        let destination = temp.join("NeutralApp.txt");
+        fs::write(&source, "source contents").unwrap();
+        fs::write(&destination, "destination contents").unwrap();
+
+        let mut config = RunConfig::new(&temp);
+        config.replacements = vec![Replacement::new("OldBrand", "NeutralApp")];
+        config.dry_run = false;
+
+        let error = run(&config).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
+        assert_eq!(
+            fs::read_to_string(&destination).unwrap(),
+            "destination contents"
+        );
+        assert_eq!(fs::read_to_string(&source).unwrap(), "source contents");
     }
 
     #[test]
